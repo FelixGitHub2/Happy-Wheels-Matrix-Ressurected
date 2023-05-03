@@ -22,7 +22,7 @@ Raylib.SetTargetFPS(60);
 Raylib.SetWindowState(ConfigFlags.FLAG_FULLSCREEN_MODE);
 
 //Currentscene
-string currentScene = "menu";
+Scenes currentScene = Scenes.menu;
 
 //Speed
 float playerspeed = 7f;
@@ -134,33 +134,75 @@ Vector2 cutlavapos = new Vector2(cutlava.x, cutlava.y);
 //SJÄLVA SPELET
 while (!Raylib.WindowShouldClose())
 {
+    Update();
 
-    //CHECKAR COLLISIONEN MELLAN PLAYER OCH LAVA
-    bool are0verlapping = Raylib.CheckCollisionRecs(player, lava);
+    //GRAFIK
+    Raylib.BeginDrawing();
 
-    //CHECKAR COLLISIONEN MELLAN PLAYER OCH DIAMOND
-    bool are0verlappingdiamond = Raylib.CheckCollisionRecs(player, diamond);
+    //BAKRUNDEN FÖR VARJE SCEN ÄR LIGHTGRAY
+    Raylib.ClearBackground(Color.LIGHTGRAY);
+
+    Render();
+
+    //END CAMERA 
+    Raylib.EndMode2D();
+
+    //END DRAWING
+    Raylib.EndDrawing();
+}
+
+void Update()
+{
+
 
     //MENU SCENEN
-    if (currentScene == "menu")
+    if (currentScene == Scenes.menu)
     {
         //OM MAN KLICKAR PÅ ENTER SÅ BYTER MAN TILL "INFO" SCENEN
         if (Raylib.IsKeyPressed(KeyboardKey.KEY_ENTER))
         {
-            currentScene = "info";
+            currentScene = Scenes.info;
         }
     }
     // OM MAN KLICKAR PÅ ENTER I "INFO SCENEN SÅ BYTER DEN TILL GAMEPLAY SECTIONEN
-    else if (currentScene == "info")
+    else if (currentScene == Scenes.info)
     {
         if (Raylib.IsKeyPressed(KeyboardKey.KEY_ENTER))
         {
-            currentScene = "game";
+            currentScene = Scenes.game;
         }
     }
-    //SJÄLVA GAMEPLAY KÅDEN
-    else if (currentScene == "game")
+    //ALL WIN SCENEN
+    else if (currentScene == Scenes.win)
     {
+        //INGET HÄR KAN KONTROLERAS AV SPELAREN UTAN ÄR BARA MOVEMENT FÖR CUTSCENEPLAYER OCH CUTSCENEDIAMOND
+        cutplayerpos = new Vector2(cutplayer.x, cutplayer.y);
+        cutplayer.x += playerspeed;
+        cutplayer.y -= playerspeed;
+
+        cutdiamondpos = new Vector2(cutdiamond.x, cutdiamond.y);
+        cutdiamond.x += playerspeed;
+        cutdiamond.y -= playerspeed;
+
+        //OM DU KLICKAR PÅENTER SÅ KOMMER DU TILLBAKS TILL MENYN
+        if (Raylib.IsKeyPressed(KeyboardKey.KEY_ENTER))
+        {
+            currentScene = Scenes.menu;
+        }
+    }
+    //CUTSCENE FÖR DEATH SCENEN DÄR LAVAN ÅKER UPPÅT OCH PLAYERN ÅKER NER
+    else if (currentScene == Scenes.die)
+    {
+        cutplayerdiepos = new Vector2(cutplayerdie.x, cutplayerdie.y);
+        cutplayerdie.y += playerspeed;
+
+        cutlavapos = new Vector2(cutlava.x, cutlava.y);
+        cutlava.y -= cutlavaspeed;
+    }
+    //ALL GRAFIK FÖR GAMEPLAYEN
+    if (currentScene == Scenes.game)
+    {
+        Collisions();
         //GRAVITATIONEN
         playerlatePos = new Vector2(player.x, player.y);
 
@@ -188,8 +230,7 @@ while (!Raylib.WindowShouldClose())
 
         //LAVA RÖRELSE
         lavapos = new Vector2(lava.x, lava.y);
-        if (currentScene == "game")
-            lava.y -= lavaspeed;
+        lava.y -= lavaspeed;
 
 
         //KODEN SÅ ATT KAMERAN FÖLJER EFTER PLAYERN
@@ -200,90 +241,12 @@ while (!Raylib.WindowShouldClose())
         camera.rotation = 0;
         //HUR ZOOMAD KAMERAN ÄR
         camera.zoom = 1;
-
-
     }
-
-
-
-
-    //COLLISION FOR LOOP
-    foreach (Rectangle wall in walls)
-    {
-        //COLLISIONEN CHECKAR OM PLAYERN RÖR VÄGGEN OCH OM DET ÄR TRUE SÄTTER PLAYERN PÅ FÖRRA FRAMEN NÄR MAN INTE NUDDADE VÄGGEN
-        if (Raylib.CheckCollisionRecs(player, wall))
-        {
-            //COLLISION X OCH Y
-            player.x = playerlatePos.X;
-            player.y = playerlatePos.Y;
-
-            //SÅ ATT ENS FALLSPED STANNAR NÄR MAN NUDDAR VÄGGAR
-            playerfallspeed = 0;
-        }
-    }
-    
-    //OM MAN RÖR PÅ DIAMOND SÅ BYTER SCENEN TILL WIN SCENEN
-    if (currentScene == "game")
-    {
-        if (are0verlappingdiamond == true)
-        {
-            currentScene = "win";
-        }
-
-    }
-
-    //BASICALLY CUTSCENE FÖR WIN SCENEN
-    if (currentScene == "win")
-    {
-        //INGET HÄR KAN KONTROLERAS AV SPELAREN UTAN ÄR BARA MOVEMENT FÖR CUTSCENEPLAYER OCH CUTSCENEDIAMOND
-        cutplayerpos = new Vector2(cutplayer.x, cutplayer.y);
-        if (currentScene == "win")
-        cutplayer.x += playerspeed;
-        cutplayer.y -= playerspeed;
-
-        cutdiamondpos = new Vector2(cutdiamond.x, cutdiamond.y);
-        if (currentScene == "win")
-            cutdiamond.x += playerspeed;
-        cutdiamond.y -= playerspeed;
-
-        //OM DU KLICKAR PÅENTER SÅ KOMMER DU TILLBAKS TILL MENYN
-        if (Raylib.IsKeyPressed(KeyboardKey.KEY_ENTER))
-        {
-            currentScene = "menu";
-        }
-    }
-
-    //OM DU RÖR PÅ LAVAN SÅ BYTER SCENEN TILL DEATH SCENEN
-    if (currentScene == "game")
-    {
-        if (are0verlapping == true)
-        {
-            currentScene = "die";
-        }
-    }
-
-    //CUTSCENE FÖR DEATH SCENEN DÄR LAVAN ÅKER UPPÅT OCH PLAYERN ÅKER NER
-    if (currentScene == "die")
-    {
-        cutplayerdiepos = new Vector2(cutplayerdie.x, cutplayerdie.y);
-        if (currentScene == "die")
-            cutplayerdie.y += playerspeed;
-
-        cutlavapos = new Vector2(cutlava.x, cutlava.y);
-        if (currentScene == "die")
-            cutlava.y -= cutlavaspeed;
-
-
-    }
-
-    //GRAFIK
-    Raylib.BeginDrawing();
-
-    //BAKRUNDEN FÖR VARJE SCEN ÄR LIGHTGRAY
-    Raylib.ClearBackground(Color.LIGHTGRAY);
-
+}
+void Render()
+{
     //ALL TEXT I MENYN
-    if (currentScene == "menu")
+    if (currentScene == Scenes.menu)
     {
         Raylib.DrawText("HAPPY WHEELS", 570, 300, 64, Color.BLACK);
         Raylib.DrawText("MATRIX", 1100, 300, 64, Color.DARKGREEN);
@@ -295,7 +258,7 @@ while (!Raylib.WindowShouldClose())
         Raylib.DrawText("D/RIGHT", 20, 1000, 64, Color.GRAY);
     }
     // ALL TEXT FÖR "INFO" SCENEN
-    if (currentScene == "info")
+    if (currentScene == Scenes.info)
     {
         Raylib.DrawRectangleRec(lorewall, Color.BLACK);
         Raylib.DrawRectangleRec(lorewall2, Color.BLACK);
@@ -311,7 +274,7 @@ while (!Raylib.WindowShouldClose())
         Raylib.DrawText("PRESS ENTER TO START", 480, 850, 77, Color.RED);
     }
     //ALL GRAFIK OCH TEXT FÖR WIN SCENEN
-    if (currentScene == "win")
+    if (currentScene == Scenes.win)
     {
         Raylib.DrawRectangleRec(cutsky, Color.SKYBLUE);
         Raylib.DrawRectangleRec(cutgraywall, Color.LIGHTGRAY);
@@ -323,7 +286,7 @@ while (!Raylib.WindowShouldClose())
         Raylib.DrawText("PRESS ENTER FOR MENU", 10, 120, 100, Color.DARKBLUE);
     }
     //ALL TEXT OCH GRAFIK FÖR DEATH SCENEN
-    if (currentScene == "die")
+    if (currentScene == Scenes.die)
     {
         Raylib.DrawRectangleRec(cutplayerdie, Color.BLACK);
         Raylib.DrawRectangleRec(cutlava, Color.ORANGE);
@@ -331,7 +294,7 @@ while (!Raylib.WindowShouldClose())
         Raylib.DrawText("PRESS ESC TO QUIT", 450, 950, 100, Color.RED);
     }
     //ALL GRAFIK FÖR GAMEPLAYEN
-    if (currentScene == "game")
+    if (currentScene == Scenes.game)
     {
         //STARTAR SÅ ATT KAMERAN FÖLJER EFTER SPELAREN I "GAME" SCENEN
         Raylib.BeginMode2D(camera);
@@ -349,10 +312,36 @@ while (!Raylib.WindowShouldClose())
         }
 
     }
+}
 
-    //END CAMERA 
-    Raylib.EndMode2D();
+void Collisions()
+{
+    //CHECKAR COLLISIONEN MELLAN PLAYER OCH LAVA
+    if (Raylib.CheckCollisionRecs(player, lava))
+    {
+        currentScene = Scenes.die;
+    }
+    //CHECKAR COLLISIONEN MELLAN PLAYER OCH DIAMOND
+    if (Raylib.CheckCollisionRecs(player, diamond))
+    {
+        currentScene = Scenes.win;
+    }
+    //COLLISION FOR LOOP
+    foreach (Rectangle wall in walls)
+    {
+        //COLLISIONEN CHECKAR OM PLAYERN RÖR VÄGGEN OCH OM DET ÄR TRUE SÄTTER PLAYERN PÅ FÖRRA FRAMEN NÄR MAN INTE NUDDADE VÄGGEN
+        if (Raylib.CheckCollisionRecs(player, wall))
+        {
+            //COLLISION X OCH Y
+            player.x = playerlatePos.X;
+            player.y = playerlatePos.Y;
 
-    //END DRAWING
-    Raylib.EndDrawing();
-};
+            //SÅ ATT ENS FALLSPED STANNAR NÄR MAN NUDDAR VÄGGAR
+            playerfallspeed = 0;
+        }
+    }
+}
+public enum Scenes
+{
+    menu, info, game, die, win
+}
